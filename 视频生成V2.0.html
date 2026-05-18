@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seedance & Seedream Workspace</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --bg-main: #0d0d10;
+    --panel-bg: rgba(28, 28, 36, 0.85);
+    --panel-border: rgba(255, 255, 255, 0.08);
+    --btn-bg: rgba(255, 255, 255, 0.05);
+    --btn-hover: rgba(255, 255, 255, 0.1);
+    --text-main: #f1f5f9;
+    --text-muted: #8b8b99;
+    --accent: #6366f1;
+    --success: #10b981;
+    --error: #f43f5e;
+    --warning: #f59e0b;
+    --img-accent: #ec4899;
+    --radius-lg: 24px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; }
+
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ─── 顶栏 ─── */
+  header {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 20px 40px; display: flex; justify-content: space-between; align-items: center;
+    z-index: 50; pointer-events: none;
+  }
+  
+  .logo { display: flex; align-items: center; gap: 8px; }
+  .logo-icon { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+  .logo-icon img { width: 100%; height: 100%; object-fit: contain; }
+  .logo-text { font-size: 15px; font-weight: 600; letter-spacing: 0.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+  .logo-text span { color: var(--accent); font-weight: 700; }
+
+  .api-key-wrap { position: relative; pointer-events: auto; display: flex; align-items: center; }
+  .api-key-input {
+    background: rgba(0,0,0,0.5); border: 1px solid var(--panel-border);
+    color: var(--text-main); padding: 8px 36px 8px 12px; border-radius: var(--radius-sm);
+    font-size: 12px; width: 280px; outline: none; backdrop-filter: blur(10px);
+    transition: 0.2s; font-family: 'DM Mono', monospace;
+  }
+  .api-key-input:focus { border-color: rgba(255,255,255,0.3); }
+
+  .eye-btn {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--text-muted);
+    cursor: pointer; padding: 4px; display: flex; align-items: center;
+    transition: color 0.2s;
+  }
+  .eye-btn:hover { color: var(--text-main); }
+
+  /* ─── 信息流区域 (Feed) ─── */
+  .feed-container {
+    flex: 1; overflow-y: auto;
+    padding: 60px 20px 220px 20px; 
+    display: flex; flex-direction: column; align-items: center; gap: 30px;
+    scroll-behavior: smooth;
+  }
+  .feed-container::-webkit-scrollbar { width: 6px; }
+  .feed-container::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 3px; }
+
+  .feed-item { width: 100%; max-width: 560px; animation: fadeIn 0.4s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .feed-meta {
+    display: flex; align-items: center; gap: 12px; font-size: 12px;
+    color: var(--text-muted); margin-bottom: 12px; line-height: 1.5;
+  }
+  .feed-meta img { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; }
+  .feed-meta .prompt-text { color: var(--text-main); font-weight: 500; font-size: 13px; }
+  
+  .type-badge {
+    padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-right: 6px; font-weight: 600;
+  }
+  .type-badge.video { background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); }
+  .type-badge.image { background: rgba(236,72,153,0.15); color: var(--img-accent); border: 1px solid rgba(236,72,153,0.3); }
+
+  .feed-video-box {
+    width: 100%; background: #13131a; border-radius: var(--radius-md);
+    border: 1px solid var(--panel-border); overflow: hidden;
+    display: flex; align-items: center; justify-content: center; position: relative;
+    max-height: 65vh; 
+  }
+  .feed-video-box video, .feed-video-box img.generated-image { 
+    width: 100%; height: 100%; max-height: 65vh; object-fit: contain; position: relative; z-index: 10;
+  }
+  .feed-video-box img.generated-image { cursor: zoom-in; }
+  
+  .feed-actions { margin-top: 12px; display: flex; gap: 8px; }
+  .action-btn {
+    background: var(--btn-bg); border: 1px solid var(--panel-border);
+    color: var(--text-muted); padding: 7px 14px; border-radius: var(--radius-sm);
+    font-size: 12px; cursor: pointer; transition: 0.2s; text-decoration: none; display: inline-flex; align-items: center;
+  }
+  .action-btn:hover { background: var(--btn-hover); color: var(--text-main); }
+  .action-btn.del:hover { background: rgba(244,63,94,0.1); color: var(--error); border-color: rgba(244,63,94,0.3); }
+
+  /* ─── 任务状态面板 ─── */
+  .task-status-panel {
+    width: 100%; max-width: 100%;
+    background: var(--panel-bg); border: 1px solid var(--panel-border);
+    border-radius: var(--radius-sm); padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    position: relative; z-index: 10; backdrop-filter: blur(10px);
+  }
+  .task-header { display: flex; justify-content: space-between; align-items: center; }
+  .task-id { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-muted); }
+  
+  .task-badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+  .task-badge.pending { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
+  .task-badge.processing { background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); }
+  .task-badge.succeeded { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+  .task-badge.failed { background: rgba(244,63,94,0.15); color: var(--error); border: 1px solid rgba(244,63,94,0.3); }
+
+  .progress-bar-wrap { background: var(--panel-border); border-radius: 3px; height: 4px; overflow: hidden; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, var(--accent), #818cf8); border-radius: 3px; transition: width 0.3s ease; }
+
+  .task-log {
+    font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted);
+    line-height: 1.8; max-height: 120px; overflow-y: auto;
+    background: rgba(0,0,0,0.5); padding: 8px; border-radius: 6px;
+  }
+  .task-log::-webkit-scrollbar { width: 4px; }
+  .task-log::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+  .task-log div { padding: 1px 0; }
+  .log-error { color: var(--error); }
+  .log-success { color: var(--success); }
+
+  /* ─── 底部悬浮控制台 ─── */
+  .workspace-wrapper {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    width: 90%; max-width: 960px; z-index: 100;
+  }
+
+  .workspace-panel {
+    background: var(--panel-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+    border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-lg);
+    padding: 18px 24px; display: flex; flex-direction: column; gap: 16px;
+    box-shadow: 0 24px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset;
+  }
+
+  .input-row { display: flex; gap: 16px; align-items: stretch; min-height: 90px; }
+
+  .upload-zone { display: flex; align-items: center; gap: 10px; overflow-x: auto; padding-right: 10px; }
+  .upload-zone::-webkit-scrollbar { height: 4px; }
+  .upload-zone::-webkit-scrollbar-thumb { background: var(--panel-border); border-radius: 2px; }
+
+  .upload-slot {
+    width: 65px; height: 85px; background: rgba(255,255,255,0.02);
+    border: 1px dashed rgba(255,255,255,0.15); border-radius: var(--radius-sm);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; color: var(--text-muted); transition: 0.2s; position: relative;
+  }
+  .upload-slot:hover { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.06); }
+  .upload-slot .icon { font-size: 20px; margin-bottom: 2px; font-weight: 300; }
+  .upload-slot .text { font-size: 11px; }
+  .upload-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-sm); position: absolute; inset: 0; }
+  
+  .upload-del {
+    position: absolute; top: -6px; right: -6px; width: 18px; height: 18px;
+    background: #333; color: white; border-radius: 50%; font-size: 10px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    border: 1px solid #555; z-index: 10;
+  }
+  .upload-del:hover { background: var(--error); border-color: var(--error); }
+
+  .swap-btn {
+    width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); cursor: pointer; border-radius: 50%; transition: 0.2s;
+  }
+  .swap-btn:hover { background: var(--btn-hover); color: var(--text-main); }
+
+  .text-input-wrap { flex: 1; position: relative; }
+  .text-input-wrap textarea {
+    width: 100%; height: 100%; background: transparent; border: none; outline: none;
+    color: var(--text-main); font-size: 14px; line-height: 1.6; resize: none;
+  }
+  .text-input-wrap textarea::placeholder { color: var(--text-muted); }
+
+  /* 下半部：工具栏 */
+  .toolbar-row { display: flex; align-items: center; justify-content: space-between; }
+  .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 8px; }
+
+  .tool-btn {
+    background: var(--btn-bg); border: 1px solid var(--panel-border);
+    color: var(--text-main); padding: 8px 14px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: 0.2s; white-space: nowrap; user-select: none;
+  }
+  .tool-btn:hover { background: var(--btn-hover); }
+  .tool-btn.active { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); }
+  .tool-btn .arrow { font-size: 10px; color: var(--text-muted); margin-left: 2px; }
+  .tool-btn .icon { font-size: 15px; opacity: 0.8; }
+  
+  /* 图片生成专属主题 */
+  .tool-btn.image-theme.active { background: rgba(236,72,153,0.1); border-color: rgba(236,72,153,0.3); color: var(--img-accent); }
+
+  .generate-btn {
+    width: 36px; height: 36px; border-radius: 50%; background: #fff; color: #000;
+    border: none; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.2s; margin-left: 8px;
+  }
+  .generate-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255,255,255,0.3); }
+  .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  
+  .spinner {
+    width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.2); border-top-color: #000;
+    border-radius: 50%; animation: spin 0.8s linear infinite; display: none;
+  }
+  .generate-btn.loading .spinner { display: block; }
+  .generate-btn.loading .arrow-icon { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── 悬浮菜单 (Popovers) ─── */
+  .popover {
+    position: fixed;
+    background: #23232c;
+    border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-md);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6); padding: 6px;
+    opacity: 0; visibility: hidden; transform: translateY(10px) scale(0.98);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); z-index: 200;
+  }
+  .popover.show { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+
+  .menu-list { display: flex; flex-direction: column; min-width: 140px; }
+  .menu-item {
+    padding: 10px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text-main);
+    display: flex; justify-content: space-between; align-items: center; transition: 0.15s;
+  }
+  .menu-item:hover { background: var(--btn-hover); }
+  .menu-item.selected { background: rgba(99,102,241,0.15); color: #818cf8; }
+  .menu-item.img-theme.selected { background: rgba(236,72,153,0.15); color: var(--img-accent); }
+  .menu-item.selected::after { content: '✓'; }
+
+  .scrollable-menu { max-height: 250px; overflow-y: auto; }
+  .scrollable-menu::-webkit-scrollbar { width: 4px; }
+  .scrollable-menu::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+  /* Ratio Menu */
+  .ratio-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px; padding: 4px;
+  }
+  .ratio-item {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 10px 14px; border-radius: 8px; cursor: pointer; color: var(--text-muted); transition: 0.15s;
+  }
+  .ratio-item:hover { background: var(--btn-hover); color: var(--text-main); }
+  .ratio-item.selected { background: rgba(255,255,255,0.1); color: var(--text-main); }
+  .ratio-item .icon-box { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; }
+  .ratio-item .rect { border: 1.5px solid currentColor; border-radius: 4px; }
+  .ratio-item[data-val="21:9"] .rect { width: 26px; height: 11px; }
+  .ratio-item[data-val="16:9"] .rect { width: 24px; height: 14px; }
+  .ratio-item[data-val="3:2"] .rect { width: 21px; height: 14px; }
+  .ratio-item[data-val="4:3"] .rect { width: 20px; height: 15px; }
+  .ratio-item[data-val="1:1"] .rect { width: 18px; height: 18px; }
+  .ratio-item[data-val="3:4"] .rect { width: 15px; height: 20px; }
+  .ratio-item[data-val="2:3"] .rect { width: 14px; height: 21px; }
+  .ratio-item[data-val="9:16"] .rect { width: 14px; height: 24px; }
+  .ratio-item span { font-size: 11px; }
+
+  .toast {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: rgba(244,63,94,0.9); color: white; padding: 10px 20px;
+    border-radius: 20px; font-size: 13px; z-index: 1000;
+    opacity: 0; pointer-events: none; transition: 0.3s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(10px); }
+
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <img src="data:image/svg+xml;base64,PHN2ZyBpZD0i5Zu+5bGCXzEiIGRhdGEtbmFtZT0i5Zu+5bGCIDEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0NC4xNSAyMTguNjciPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDojMjMxODE1O30uY2xzLTJ7ZmlsbDojZWY4MjAwO30uY2xzLTN7ZmlsbDojZmZmO308L3N0eWxlPjwvZGVmcz48Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9IjE3OC4xIiBjeT0iMTQzLjEzIiByPSI2My41NSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTIuMTIgMjgzLjU4KSByb3RhdGUoLTc2LjcyKSIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE1Mi4wOSwyMS43N2wtMjIuOTMsMzYuN0E2My42LDYzLjYsMCwwLDEsNzgsMTQwLjQxTDQxLjQsMTk4LjkxSDk0LjU0TDIwNS4yNCwyMS43N1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik02OC41MywxNEE2My41Niw2My41NiwwLDEsMCw3OCwxNDAuNDFsNTEuMi04MS45NEE2My41Niw2My41NiwwLDAsMCw2OC41MywxNFoiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik0xNDgsMTI1LjUxdjEwLjczSDE0M1YxMjUuNTFsLTcuODYtMTUuNDZoNS41NGw0Ljg5LDEwLjU2LDQuODItMTAuNTZoNS41NloiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik0xNzIuNDcsMTM2LjI0bC0xLjU1LTQuNjRoLTkuM0wxNjAsMTM2LjI0SDE1NC43bDkuNTMtMjYuMTloNGw5LjU3LDI2LjE5Wm0tNi4xMS0xOC40Ni0zLjMxLDkuNTNoNi41MVoiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik0xOTYuNDcsMTMzLjU5YTEwLjEzLDEwLjEzLDAsMCwxLTE0LjE1LDBjLTIuNjUtMi42NS0yLjU4LTUuOTEtMi41OC0xMC40NHMtLjA3LTcuNzksMi41OC0xMC40NWExMC4xOCwxMC4xOCwwLDAsMSwxNC4xNSwwYzIuNjUsMi42NiwyLjYxLDUuOTMsMi42MSwxMC40NVMxOTkuMTIsMTMwLjk0LDE5Ni40NywxMzMuNTlabS0zLjc4LTE3Ljc5YTQuMjYsNC4yNiwwLDAsMC0zLjI4LTEuNDEsNC4zMSw0LjMxLDAsMCwwLTMuMywxLjQxYy0xLDEuMS0xLjI1LDIuMzEtMS4yNSw3LjM1cy4yNSw2LjI1LDEuMjUsNy4zNWE0LjMsNC4zLDAsMCwwLDMuMywxLjQsNC4yNiw0LjI2LDAsMCwwLDMuMjgtMS40YzEtMS4xLDEuMjgtMi4zMSwxLjI4LTcuMzVTMTkzLjY4LDExNi45LDE5Mi42OSwxMTUuOFoiLz48cGF0aCBjbGFzcz0iY2xzLTMiIGQ9Ik0xNTUuOTEsMTY2aC01LjU2bC00LjgyLTEwLjU2TDE0MC42NCwxNjZIMTM1LjFMMTQzLDE1MC41MVYxMzkuNzhIMTQ4djEwLjczWiIvPjxwYXRoIGNsYXNzPSJjbHMtMyIgZD0iTTE3Ny44LDEzOS43OCwxNjguMjMsMTY2aC00bC05LjUzLTI2LjE5SDE2MGwxLjU5LDQuNjRoOS4zbDEuNTUtNC42NFptLTguMjQsOC45M2gtNi41MWwzLjMxLDkuNTNaIi8+PHBhdGggY2xhc3M9ImNscy0zIiBkPSJNMjAxLDEzOS43OFYxNjZoLTUuMTJ2LTE2bC0xMC4zNywxNkgxODFWMTM5Ljc4aDUuMTJ2MTYuMDdsMTAuMzYtMTYuMDdaIi8+PHBhdGggY2xhc3M9ImNscy0zIiBkPSJNMjI1Ljc0LDE1MC41MXYzLjgzaC05Ljg5di00LjI3aDQuODF2LTFhNS4xLDUuMSwwLDAsMC0xLjE4LTMuNDksNC42OCw0LjY4LDAsMCwwLTMuNjMtMS40Nyw0LDQsMCwwLDAtMy4yNywxLjM2Yy0xLDEuMjItMS4yNSwyLjI0LTEuMjUsNy4zOXMuMjksNi4xNSwxLjI1LDcuMzZhNC4xNyw0LjE3LDAsMCwwLDMuMjcsMS40YzIuNTQsMCw0LjA4LTEuMjksNC43MS0zLjgzaDUuMTVjLS43MSw0LjU2LTMuOSw4LjM4LTkuODYsOC4zOGE5LjU3LDkuNTcsMCwwLDEtNy4wNi0yLjg2LDcuNSw3LjUsMCwwLDEtMi4xNC0zLjk0LDM2LjEzLDM2LjEzLDAsMCwxLS40NC02LjUxLDM2LjEzLDM2LjEzLDAsMCwxLC40NC02LjUxLDcuNjYsNy42NiwwLDAsMSwyLjE0LTMuOTMsOS41OCw5LjU4LDAsMCwxLDcuMDYtMi44Nyw5LjgyLDkuODIsMCwwLDEsNy4zOSwzQzIyNSwxNDQuNDUsMjI1Ljc0LDE0Ni43LDIyNS43NCwxNTAuNTFaIi8+PC9zdmc+" alt="Logo">
+      </div>
+      <div class="logo-text">Seedance生成器 <span>耀阳传媒 V2.0</span></div>
+    </div>
+    <div class="api-key-wrap">
+      <input type="password" class="api-key-input" id="apiKeyInput" placeholder="Volcano API Key (Bearer Token)..." oninput="saveApiKey()">
+      <button class="eye-btn" onclick="toggleKeyVisibility()" title="显示/隐藏密钥">
+        <svg id="eyeIcon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="feed-container" id="feedContainer">
+    <div style="color:var(--text-muted); font-size: 13px; margin-top: 50px;" id="emptyHint">在这里生成您的第一个作品...</div>
+  </div>
+
+  <div class="workspace-wrapper">
+    <div class="workspace-panel" id="workspacePanel">
+      <div class="input-row">
+        <div class="upload-zone" id="uploadZone"></div>
+        <div class="text-input-wrap">
+          <textarea id="promptInput" placeholder="输入文字，描述你想创作的画面内容、运动方式等..."></textarea>
+        </div>
+      </div>
+
+      <div class="toolbar-row">
+        <div class="toolbar-left">
+          
+          <button class="tool-btn" onclick="toggleMenu('typeMenu', this, event)" id="typeBtn" style="border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.08);">
+            <span class="icon">✨</span> <span class="text">视频生成</span> <span class="arrow">v</span>
+          </button>
+
+          <div style="width: 1px; height: 20px; background: var(--panel-border); margin: 0 4px;"></div>
+
+          <button class="tool-btn" onclick="toggleMenu('modelMenu', this, event)" id="modelBtn">
+            <span class="icon">⬡</span> <span class="text">Seedance 1.5 Pro</span> <span class="arrow">v</span>
+          </button>
+          
+          <button class="tool-btn" onclick="toggleMenu('modeMenu', this, event)" id="modeBtn">
+            <span class="icon">⧉</span> <span class="text">全能参考</span> <span class="arrow">v</span>
+          </button>
+          
+          <button class="tool-btn" onclick="toggleMenu('ratioMenu', this, event)" id="ratioBtn">
+            <span class="icon">◧</span> <span class="text">1:1</span>
+          </button>
+          
+          <button class="tool-btn" onclick="toggleMenu('durationMenu', this, event)" id="durationBtn">
+            <span class="icon">⏱</span> <span class="text">5s</span>
+          </button>
+        </div>
+        
+        <div class="toolbar-right">
+          <button class="tool-btn" style="border:none; background:transparent;" onclick="clearAll()">↺ 全部清空</button>
+          <button class="generate-btn" id="generateBtn" onclick="handleGenerate()" title="开始生成">
+            <span class="arrow-icon">↑</span>
+            <span class="spinner"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popovers -->
+  <div class="popover" id="typeMenu">
+    <div class="menu-list">
+      <div class="menu-item img-theme" onclick="selectType('image', '图片生成', this)">📸 图片生成</div>
+      <div class="menu-item selected" onclick="selectType('video', '视频生成', this)">🎬 视频生成</div>
+    </div>
+  </div>
+
+  <div class="popover" id="modelMenu">
+    <div class="menu-list" id="videoModelList">
+      <div class="menu-item selected" onclick="selectOption('model', 'doubao-seedance-1-5-pro-251215', 'Seedance 1.5 Pro', this)">⬡ Seedance 1.5 Pro</div>
+      <div class="menu-item" onclick="selectOption('model', 'doubao-seedance-2-0-fast-260128', 'Seedance 2.0 Fast', this)">⬡ Seedance 2.0 Fast</div>
+      <div class="menu-item" onclick="selectOption('model', 'doubao-seedance-2-0-260128', 'Seedance 2.0', this)">⬡ Seedance 2.0</div>
+    </div>
+    <div class="menu-list" id="imageModelList" style="display: none;">
+      <div class="menu-item img-theme selected" onclick="selectOption('model', 'doubao-seedream-5-0-260128', '图片 5.0', this)">⬡ 图片 5.0</div>
+      <div class="menu-item img-theme" onclick="selectOption('model', 'doubao-seedream-4-5-251128', '图片 4.5', this)">⬡ 图片 4.5</div>
+      <div class="menu-item img-theme" onclick="selectOption('model', 'doubao-seedream-4-0-250828', '图片 4.0', this)">⬡ 图片 4.0</div>
+    </div>
+  </div>
+
+  <div class="popover" id="modeMenu">
+    <div class="menu-list">
+      <div class="menu-item selected" onclick="selectOption('mode', 'omnipotent', '全能参考', this)">⧉ 全能参考</div>
+      <div class="menu-item" id="modeMenuFirstLast" onclick="selectOption('mode', 'first_last', '首尾帧', this)">◫ 首尾帧</div>
+    </div>
+  </div>
+
+  <div class="popover" id="ratioMenu">
+    <div class="ratio-grid">
+      <div class="ratio-item" data-val="21:9" onclick="selectOption('ratio', '21:9', '21:9', this)"><div class="icon-box"><div class="rect"></div></div><span>21:9</span></div>
+      <div class="ratio-item" data-val="16:9" onclick="selectOption('ratio', '16:9', '16:9', this)"><div class="icon-box"><div class="rect"></div></div><span>16:9</span></div>
+      <div class="ratio-item" data-val="3:2" onclick="selectOption('ratio', '3:2', '3:2', this)"><div class="icon-box"><div class="rect"></div></div><span>3:2</span></div>
+      <div class="ratio-item" data-val="4:3" onclick="selectOption('ratio', '4:3', '4:3', this)"><div class="icon-box"><div class="rect"></div></div><span>4:3</span></div>
+      <div class="ratio-item selected" data-val="1:1" onclick="selectOption('ratio', '1:1', '1:1', this)"><div class="icon-box"><div class="rect"></div></div><span>1:1</span></div>
+      <div class="ratio-item" data-val="3:4" onclick="selectOption('ratio', '3:4', '3:4', this)"><div class="icon-box"><div class="rect"></div></div><span>3:4</span></div>
+      <div class="ratio-item" data-val="2:3" onclick="selectOption('ratio', '2:3', '2:3', this)"><div class="icon-box"><div class="rect"></div></div><span>2:3</span></div>
+      <div class="ratio-item" data-val="9:16" onclick="selectOption('ratio', '9:16', '9:16', this)"><div class="icon-box"><div class="rect"></div></div><span>9:16</span></div>
+    </div>
+  </div>
+
+  <div class="popover" id="durationMenu">
+    <div class="menu-list scrollable-menu">
+      <div class="menu-item" onclick="selectOption('duration', 4, '4s', this)">⏱ 4s</div>
+      <div class="menu-item selected" onclick="selectOption('duration', 5, '5s', this)">⏱ 5s</div>
+      <div class="menu-item" onclick="selectOption('duration', 6, '6s', this)">⏱ 6s</div>
+      <div class="menu-item" onclick="selectOption('duration', 7, '7s', this)">⏱ 7s</div>
+      <div class="menu-item" onclick="selectOption('duration', 8, '8s', this)">⏱ 8s</div>
+      <div class="menu-item" onclick="selectOption('duration', 9, '9s', this)">⏱ 9s</div>
+      <div class="menu-item" onclick="selectOption('duration', 10, '10s', this)">⏱ 10s</div>
+      <div class="menu-item" onclick="selectOption('duration', 15, '15s', this)">⏱ 15s</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">提示信息</div>
+
+<script>
+  // ─── 全局状态：记录当次网页新生成的任务 ID ───
+  window.autoPlayIds = new Set();
+
+  const videoObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const video = entry.target;
+      if (!entry.isIntersecting && !video.paused) { video.pause(); }
+    });
+  }, { threshold: 0.1 });
+
+  const state = {
+    apiKey: '',
+    type: 'video',
+    mode: 'omnipotent',
+    model: 'doubao-seedance-1-5-pro-251215',
+    ratio: '1:1',
+    duration: 5,
+    assets: {
+      omnipotent: [],
+      first_last: { first: null, last: null }
+    }
+  };
+
+  const API_VIDEO_BASE = 'https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks';
+  const API_IMAGE_BASE = 'https://ark.cn-beijing.volces.com/api/v3/images/generations';
+  const DB_NAME = 'SeedanceV2_DB';
+  const STORE_NAME = 'tasks';
+  const activeTimers = {};
+
+  window.onload = async () => {
+    const savedKey = localStorage.getItem('seedance_v2_api_key');
+    if (savedKey) { 
+      state.apiKey = savedKey; 
+      document.getElementById('apiKeyInput').value = savedKey; 
+    }
+    renderUploadZone();
+    await loadHistory();
+    const container = document.getElementById('feedContainer');
+    container.scrollTo(0, container.scrollHeight);
+  };
+
+  function saveApiKey() {
+    let val = document.getElementById('apiKeyInput').value.trim();
+    state.apiKey = val; 
+    localStorage.setItem('seedance_v2_api_key', val);
+  }
+
+  function toggleKeyVisibility() {
+    const input = document.getElementById('apiKeyInput');
+    const icon = document.getElementById('eyeIcon');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="m9.9 4.24 9.26 9.26c.88.88.88 2.3 0 3.18a2 2 0 0 1-1.02.32"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    } else {
+      input.type = 'password';
+      icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    }
+  }
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 2);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          const store = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+          store.createIndex('timestamp', 'timestamp', { unique: false });
+        }
+      };
+      req.onsuccess = e => resolve(e.target.result);
+    });
+  }
+
+  async function dbAdd(record) {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const req = tx.objectStore(STORE_NAME).add(record);
+      req.onsuccess = e => resolve(e.target.result);
+    });
+  }
+
+  async function dbGetAll() {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const req = tx.objectStore(STORE_NAME).index('timestamp').openCursor(null, 'next');
+      const items = [];
+      req.onsuccess = e => {
+        const cur = e.target.result;
+        if (cur) { items.push(cur.value); cur.continue(); } else resolve(items);
+      };
+    });
+  }
+
+  async function dbUpdate(id, patch) {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.get(id);
+      req.onsuccess = e => {
+        if(e.target.result) { store.put({ ...e.target.result, ...patch }); resolve(); }
+      };
+    });
+  }
+
+  async function dbDelete(id) {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).delete(id);
+      tx.oncomplete = resolve;
+    });
+  }
+
+  let activePopover = null;
+
+  function toggleMenu(menuId, btnElement, e) {
+    const popover = document.getElementById(menuId);
+    if (activePopover === popover) {
+      popover.classList.remove('show');
+      btnElement.classList.remove('active');
+      activePopover = null;
+      if (e) e.stopPropagation(); return;
+    }
+    closeAllPopovers();
+    const btnRect = btnElement.getBoundingClientRect();
+    popover.style.left = btnRect.left + 'px';
+    popover.style.bottom = (window.innerHeight - btnRect.top + 15) + 'px';
+    popover.classList.add('show');
+    btnElement.classList.add('active');
+    activePopover = popover;
+    if (e) e.stopPropagation();
+  }
+
+  function closeAllPopovers() {
+    document.querySelectorAll('.popover').forEach(p => p.classList.remove('show'));
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+    activePopover = null;
+  }
+  document.addEventListener('click', closeAllPopovers);
+
+  function selectType(type, label, el) {
+    state.type = type;
+    document.getElementById('typeBtn').querySelector('.text').innerText = label;
+    document.querySelectorAll('#typeMenu .menu-item').forEach(item => item.classList.remove('selected'));
+    el.classList.add('selected');
+
+    if (type === 'image') {
+      document.getElementById('videoModelList').style.display = 'none';
+      document.getElementById('imageModelList').style.display = 'flex';
+      document.getElementById('durationBtn').style.display = 'none';
+      document.getElementById('modeMenuFirstLast').style.display = 'none';
+      document.getElementById('typeBtn').classList.add('image-theme');
+
+      if (state.mode === 'first_last') {
+         selectOption('mode', 'omnipotent', '全能参考', document.querySelector('#modeMenu .menu-item'));
+      }
+      const firstImgModel = document.querySelector('#imageModelList .menu-item');
+      selectOption('model', 'doubao-seedream-5-0-260128', '图片 5.0', firstImgModel);
+    } else {
+      document.getElementById('videoModelList').style.display = 'flex';
+      document.getElementById('imageModelList').style.display = 'none';
+      document.getElementById('durationBtn').style.display = 'flex';
+      document.getElementById('modeMenuFirstLast').style.display = 'flex';
+      document.getElementById('typeBtn').classList.remove('image-theme');
+      
+      const firstVidModel = document.querySelector('#videoModelList .menu-item');
+      selectOption('model', 'doubao-seedance-1-5-pro-251215', 'Seedance 1.5 Pro', firstVidModel);
+    }
+  }
+
+  function selectOption(type, value, label, el) {
+    state[type] = value;
+    const btn = document.getElementById(type + 'Btn');
+    if(btn) btn.querySelector('.text').innerText = label;
+    
+    if (type === 'model') {
+      document.querySelectorAll('#modelMenu .menu-item').forEach(item => item.classList.remove('selected'));
+    } else {
+      const menu = document.getElementById(type + 'Menu');
+      if (menu) menu.querySelectorAll(type === 'ratio' ? '.ratio-item' : '.menu-item').forEach(item => item.classList.remove('selected'));
+    }
+    if (el) el.classList.add('selected');
+    if(type === 'mode') renderUploadZone();
+  }
+
+  function renderUploadZone() {
+    const zone = document.getElementById('uploadZone');
+    zone.innerHTML = '';
+    
+    if (state.mode === 'omnipotent') {
+      state.assets.omnipotent.forEach((url, idx) => {
+        zone.innerHTML += `<div class="upload-slot"><img src="${url}"><div class="upload-del" onclick="removeAsset('omnipotent', ${idx}, event)">✕</div></div>`;
+      });
+      if (state.assets.omnipotent.length < 12) {
+        zone.innerHTML += `<div class="upload-slot" onclick="triggerUpload('omnipotent')"><div class="icon">+</div><div class="text">参考内容</div></div>`;
+      }
+    } 
+    else if (state.mode === 'first_last') {
+      const f = state.assets.first_last.first;
+      const l = state.assets.first_last.last;
+      zone.innerHTML += f ? `<div class="upload-slot"><img src="${f}"><div class="upload-del" onclick="removeAsset('first', 0, event)">✕</div></div>` : `<div class="upload-slot" onclick="triggerUpload('first')"><div class="icon">+</div><div class="text">首帧</div></div>`;
+      zone.innerHTML += `<div class="swap-btn" onclick="swapFirstLast(event)" title="互换首尾帧">⇌</div>`;
+      zone.innerHTML += l ? `<div class="upload-slot"><img src="${l}"><div class="upload-del" onclick="removeAsset('last', 0, event)">✕</div></div>` : `<div class="upload-slot" onclick="triggerUpload('last')"><div class="icon">+</div><div class="text">尾帧</div></div>`;
+    }
+  }
+
+  function triggerUpload(target) {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*';
+    if (target === 'omnipotent') input.multiple = true;
+    input.onchange = e => {
+      Array.from(e.target.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const res = ev.target.result;
+          if (target === 'omnipotent') { if (state.assets.omnipotent.length < 12) state.assets.omnipotent.push(res); }
+          else if (target === 'first') { state.assets.first_last.first = res; }
+          else if (target === 'last') { state.assets.first_last.last = res; }
+          renderUploadZone();
+        };
+        reader.readAsDataURL(file);
+      });
+    };
+    input.click();
+  }
+
+  function removeAsset(target, idx, e) {
+    e.stopPropagation();
+    if (target === 'omnipotent') state.assets.omnipotent.splice(idx, 1);
+    else if (target === 'first') state.assets.first_last.first = null;
+    else if (target === 'last') state.assets.first_last.last = null;
+    renderUploadZone();
+  }
+
+  function swapFirstLast(e) {
+    e.stopPropagation();
+    const temp = state.assets.first_last.first;
+    state.assets.first_last.first = state.assets.first_last.last;
+    state.assets.first_last.last = temp;
+    renderUploadZone();
+  }
+
+  function clearAll() {
+    state.assets.omnipotent = [];
+    state.assets.first_last = { first: null, last: null };
+    document.getElementById('promptInput').value = '';
+    renderUploadZone();
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.innerText = msg; toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  function appendLog(dbId, msg, type = 'normal') {
+    const logBox = document.getElementById(`log-${dbId}`);
+    if (!logBox) return;
+    const time = new Date().toLocaleTimeString();
+    const div = document.createElement('div');
+    div.className = type === 'error' ? 'log-error' : (type === 'success' ? 'log-success' : '');
+    div.innerText = `${time} | ${msg}`;
+    logBox.appendChild(div);
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  function updateProgress(dbId, percent) {
+    const bar = document.getElementById(`progress-${dbId}`);
+    if (bar) bar.style.width = percent + '%';
+  }
+
+  function updateHeader(dbId, taskId, status, statusText) {
+    const idEl = document.getElementById(`task-id-${dbId}`);
+    const badgeEl = document.getElementById(`badge-${dbId}`);
+    if (idEl && taskId) idEl.innerText = `Task ID: ${taskId}`;
+    if (badgeEl) {
+      badgeEl.className = `task-badge ${status}`;
+      badgeEl.innerText = statusText;
+    }
+  }
+
+  function findVideoUrl(data) {
+    try {
+      if (data.output?.video_url) return data.output.video_url;
+      if (data.output?.content?.[0]?.video_url) return data.output.content[0].video_url;
+      if (data.task?.output?.video_url) return data.task.output.video_url;
+      const str = JSON.stringify(data);
+      const match = str.match(/"video_url"\s*:\s*"([^"]+)"/);
+      return match ? match[1] : null;
+    } catch { return null; }
+  }
+
+  function getImageSizeString(ratio) {
+    const map = {
+        '1:1': '2048x2048',
+        '16:9': '2560x1440',
+        '9:16': '1440x2560',
+        '3:2': '2400x1600',
+        '2:3': '1600x2400',
+        '4:3': '2304x1728',
+        '3:4': '1728x2304',
+        '21:9': '3136x1344'
+    };
+    return map[ratio] || '2048x2048';
+  }
+
+  async function handleGenerate() {
+    if (!state.apiKey) return showToast('请在左上角填写 API Key');
+    const prompt = document.getElementById('promptInput').value.trim();
+    if (!prompt) return showToast('请填写画面描述文字');
+
+    const btn = document.getElementById('generateBtn');
+    btn.classList.add('loading'); btn.disabled = true;
+    let dbId = null;
+
+    try {
+      const isImage = state.type === 'image';
+      let body;
+      let firstImage = null;
+      let apiEndpoint = API_VIDEO_BASE;
+
+      if (isImage) {
+         apiEndpoint = API_IMAGE_BASE;
+         const images = [];
+         if (state.mode === 'omnipotent' && state.assets.omnipotent.length > 0) {
+            firstImage = state.assets.omnipotent[0];
+            state.assets.omnipotent.forEach(url => images.push(url));
+         }
+         body = { model: state.model, prompt: prompt, size: getImageSizeString(state.ratio) };
+         if (images.length > 0) body.image = images.length === 1 ? images[0] : images;
+      } else {
+         const content = [];
+         content.push({ type: 'text', text: prompt });
+         if (state.mode === 'omnipotent') {
+           state.assets.omnipotent.forEach(url => content.push({ type: 'image_url', image_url: { url } }));
+           if(state.assets.omnipotent.length > 0) firstImage = state.assets.omnipotent[0];
+         } else {
+           if (state.assets.first_last.first) { content.push({ type: 'image_url', image_url: { url: state.assets.first_last.first }, role: 'first_frame' }); firstImage = state.assets.first_last.first; }
+           if (state.assets.first_last.last) content.push({ type: 'image_url', image_url: { url: state.assets.first_last.last }, role: 'last_frame' });
+         }
+         body = { model: state.model, content: content, resolution: "720p", ratio: state.ratio, duration: state.duration };
+      }
+
+      dbId = await dbAdd({
+        type: state.type, prompt, model: state.model, ratio: state.ratio, duration: isImage ? null : state.duration,
+        timestamp: Date.now(), status: 'pending', taskId: null, videoUrl: null, firstImage: firstImage 
+      });
+
+      await loadHistory(); 
+      const container = document.getElementById('feedContainer');
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+
+      appendLog(dbId, "🚀 准备提交任务...");
+
+      if (isImage) {
+         updateProgress(dbId, 50);
+         appendLog(dbId, "⏳ 正在光速生成图片中，请稍候...");
+      }
+
+      const res = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.apiKey}` },
+        body: JSON.stringify(body)
+      });
+      
+      const data = await res.json();
+      appendLog(dbId, `📦 HTTP ${res.status}`);
+
+      if (!res.ok) {
+        const errMsg = data.error?.message || JSON.stringify(data);
+        throw new Error(errMsg);
+      }
+
+      if (isImage) {
+         const imageUrl = data.data?.[0]?.url;
+         if (imageUrl) {
+            appendLog(dbId, "🎉 图片生成成功！", 'success');
+            await dbUpdate(dbId, { status: 'succeeded', videoUrl: imageUrl, taskId: 'sync-image-task' });
+            updateProgress(dbId, 100);
+            updateHeader(dbId, 'sync-image-task', 'succeeded', '完成');
+            setTimeout(() => loadHistory(), 500);
+         } else {
+            throw new Error("未能从响应中提取图片URL");
+         }
+      } else {
+         const taskId = data.id || data.task_id || data.output?.task_id;
+         if (!taskId) throw new Error("未能获取 taskId");
+
+         appendLog(dbId, `✅ 任务已创建: ${taskId}`, 'success');
+         appendLog(dbId, "⏳ 开始轮询任务状态...");
+         await dbUpdate(dbId, { taskId, status: 'processing' });
+         updateHeader(dbId, taskId, 'processing', '生成中');
+         updateProgress(dbId, 30);
+         startPolling(dbId, taskId);
+      }
+      
+      clearAll();
+
+    } catch (err) {
+       if (dbId) {
+          appendLog(dbId, `❌ 请求失败: ${err.message}`, 'error');
+          updateHeader(dbId, null, 'failed', '提交失败');
+          await dbUpdate(dbId, { status: 'failed', error: err.message });
+          loadHistory(); 
+       }
+       showToast(`生成异常: 请查看错误日志`);
+    } finally {
+      btn.classList.remove('loading'); btn.disabled = false;
+    }
+  }
+
+  function startPolling(dbId, taskId) {
+    if (activeTimers[taskId]) return;
+    activeTimers[taskId] = setInterval(() => checkTaskStatus(dbId, taskId), 5000);
+    checkTaskStatus(dbId, taskId); 
+  }
+
+  async function checkTaskStatus(dbId, taskId) {
+    try {
+      const res = await fetch(`${API_VIDEO_BASE}/${taskId}`, { headers: { 'Authorization': `Bearer ${state.apiKey}` } });
+      if (!res.ok) { appendLog(dbId, `⚠️ 查询网络异常 (HTTP ${res.status})`, 'error'); return; }
+      
+      const data = await res.json();
+      const status = (data.status || '').toLowerCase();
+      appendLog(dbId, `📊 ${status} | 查询成功`);
+
+      if (status === 'pending' || status === 'queueing') {
+        updateProgress(dbId, 10 + Math.random() * 20);
+        updateHeader(dbId, taskId, 'pending', '排队中');
+      } else if (status === 'processing') {
+        updateProgress(dbId, 40 + Math.random() * 40);
+        updateHeader(dbId, taskId, 'processing', '生成中');
+      } else if (status === 'succeeded') {
+        clearInterval(activeTimers[taskId]); delete activeTimers[taskId];
+        updateProgress(dbId, 100);
+        appendLog(dbId, "🎉 渲染完成！准备提取视频链接...", 'success');
+        
+        const videoUrl = findVideoUrl(data);
+        if (videoUrl) {
+           await dbUpdate(dbId, { status: 'succeeded', videoUrl });
+           window.autoPlayIds.add(dbId);
+           appendLog(dbId, "✅ 视频提取成功，即将展示画面！", 'success');
+           setTimeout(() => loadHistory(), 1000);
+        } else {
+           const errMsg = "获取到了 succeeded 状态，但未能在 JSON 中找到 video_url";
+           appendLog(dbId, `❌ ${errMsg}`, 'error');
+           updateHeader(dbId, taskId, 'failed', '解析失败');
+           await dbUpdate(dbId, { status: 'failed', error: errMsg });
+           loadHistory();
+        }
+      } else if (status === 'failed') {
+        clearInterval(activeTimers[taskId]); delete activeTimers[taskId];
+        const errMsg = data.error?.message || "未知失败原因";
+        appendLog(dbId, `❌ 任务失败: ${errMsg}`, 'error');
+        updateHeader(dbId, taskId, 'failed', '生成失败');
+        await dbUpdate(dbId, { status: 'failed', error: errMsg });
+        loadHistory();
+      }
+    } catch(e) {
+      appendLog(dbId, `⚠️ 代码捕获异常: ${e.message}`, 'error');
+    }
+  }
+
+  function getRatioDimensions(ratio) {
+    const map = { '21:9': '21/9', '16:9': '16/9', '3:2': '3/2', '4:3': '4/3', '1:1': '1/1', '3:4': '3/4', '2:3': '2/3', '9:16': '9/16' };
+    return map[ratio] || '16/9';
+  }
+
+  async function loadHistory() {
+    const items = await dbGetAll();
+    const container = document.getElementById('feedContainer');
+    
+    if (items.length === 0) {
+      container.innerHTML = '<div style="color:var(--text-muted); font-size: 13px; margin-top: 50px;" id="emptyHint">在这里生成您的第一个作品...</div>';
+      return;
+    }
+
+    let html = '';
+    items.forEach(item => {
+      const aspectRatio = getRatioDimensions(item.ratio);
+      const isImg = item.type === 'image';
+      
+      let mediaContent = '';
+      if (item.status === 'succeeded' && item.videoUrl) {
+        if (isImg) {
+           mediaContent = `<img src="${item.videoUrl}" class="generated-image" onclick="window.open('${item.videoUrl}', '_blank')" alt="生成图片">`;
+        } else {
+           const shouldAutoplay = window.autoPlayIds.has(item.id);
+           const autoplayAttr = shouldAutoplay ? 'autoplay playsinline' : '';
+           const preloadAttr = shouldAutoplay ? 'preload="auto"' : (item.firstImage ? 'preload="none"' : 'preload="metadata"');
+           const posterAttr = item.firstImage ? `poster="${item.firstImage}"` : '';
+           
+           mediaContent = `<video src="${item.videoUrl}" ${posterAttr} ${autoplayAttr} ${preloadAttr} controls loop muted></video>`;
+        }
+      } else {
+        let statusCls = 'pending'; let statusText = '初始化...';
+        if (item.status === 'processing') { statusCls = 'processing'; statusText = '生成中'; }
+        if (item.status === 'failed') { statusCls = 'failed'; statusText = '失败'; }
+        
+        const previewBg = item.firstImage 
+           ? `<img src="${item.firstImage}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.3; filter:blur(10px);">` 
+           : '';
+
+        mediaContent = `
+          ${previewBg}
+          <div class="task-status-panel" id="status-box-${item.id}">
+            <div class="task-header">
+              <span class="task-id" id="task-id-${item.id}">Task ID: ${item.taskId || '等待提交...'}</span>
+              <span class="task-badge ${statusCls}" id="badge-${item.id}">${statusText}</span>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar" id="progress-${item.id}" style="width: ${item.status === 'failed' ? 100 : 10}%"></div>
+            </div>
+            <div class="task-log" id="log-${item.id}">
+               ${item.status === 'failed' ? `<div class="log-error">该任务已被标记为失败。<br>原因：${item.error || '未知网络或权限错误'}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }
+
+      const typeBadge = isImg 
+        ? `<span class="type-badge image">📸 图片</span>` 
+        : `<span class="type-badge video">🎬 视频</span>`;
+        
+      let displayModel = item.model;
+      if (displayModel.includes('seedream-5-0')) displayModel = '图片 5.0';
+      else if (displayModel.includes('seedream-4-5')) displayModel = '图片 4.5';
+      else if (displayModel.includes('seedream-4-0')) displayModel = '图片 4.0';
+      else if (displayModel.includes('2-0-fast')) displayModel = 'Seedance 2.0 Fast';
+      else if (displayModel.includes('2-0')) displayModel = 'Seedance 2.0';
+      else displayModel = 'Seedance 1.5 Pro';
+
+      html += `
+        <div class="feed-item" id="task-${item.id}">
+          <div class="feed-meta">
+            <img src="https://api.dicebear.com/7.x/shapes/svg?seed=${item.id}" alt="avatar">
+            <div>
+              <div class="prompt-text">${escapeHtml(item.prompt)}</div>
+              <div style="margin-top:4px;">
+                ${typeBadge} ${displayModel} | ${isImg ? '' : item.duration + 's | '} ${item.ratio}
+                <span style="opacity:0.5; margin-left: 10px;">${new Date(item.timestamp).toLocaleTimeString()}</span>
+              </div>
+            </div>
+          </div>
+          <div class="feed-video-box" style="aspect-ratio: ${aspectRatio};">
+            ${mediaContent}
+          </div>
+          <div class="feed-actions">
+            ${item.videoUrl ? `<a href="${item.videoUrl}" download class="action-btn">↓ 下载${isImg ? '图片' : '视频'}</a>` : ''}
+            <button class="action-btn del" onclick="deleteTask(${item.id})">✕ 删除记录</button>
+          </div>
+        </div>
+      `;
+    });
+    
+    container.innerHTML = html;
+
+    document.querySelectorAll('.feed-video-box video').forEach(vid => { videoObserver.observe(vid); });
+    items.forEach(item => {
+      if ((item.status === 'pending' || item.status === 'processing') && item.taskId && item.type !== 'image') {
+        startPolling(item.id, item.taskId);
+      }
+    });
+  }
+
+  async function deleteTask(id) {
+    if(!confirm('确定删除该记录吗？')) return;
+    await dbDelete(id);
+    await loadHistory();
+  }
+
+  function escapeHtml(str) {
+    if(!str) return '';
+    const div = document.createElement('div'); div.innerText = str; return div.innerHTML;
+  }
+</script>
+</body>
+</html>
