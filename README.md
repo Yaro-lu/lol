@@ -8,3 +8,6 @@ png转换成icon格式
 
 ## 视频生成V2.0.html
 调用了方舟视频模型 seedance 2.0、seedance 2.0 fast、seedance 1.5 图片模型：doubao-seedream-5-0-260128、doubao-seedream-4-5-251128、doubao-seedream-4-0-250828  整合到界面里面，方便自行调用。
+
+## 剪映video 
+绕开导出限制：剪映合成复合片段，渲染后，去 日期\Resources\combination 找到片段，拉取到该图标上，即可正常打开视频。 
