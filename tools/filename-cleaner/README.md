@@ -2,6 +2,10 @@
 
 递归清理文件与文件夹名称中的特殊字符，提供目录选择和处理日志界面。
 
+## 下载成品
+
+[下载已有 Windows 成品](https://github.com/Yaro-lu/lol/releases/latest/download/Remove.special.file.name.zip)，解压后运行。该成品沿用原 Releases 附件；下面是主库 Python 源码的运行方法。
+
 ## 运行
 
 需要 Python 3 和 Tkinter，不使用额外的第三方 Python 包。在仓库根目录执行：

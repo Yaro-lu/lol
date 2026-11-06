@@ -1,0 +1,107 @@
+{
+  "tools": [
+    {
+      "id": "image-to-ico",
+      "name": "图片转 ICO",
+      "description": "将 PNG、JPG 等图片转换为多尺寸 ICO 图标。",
+      "kind": "Python 图形界面",
+      "directory": "tools/image-to-ico",
+      "entry": "tools/image-to-ico/main.py",
+      "asset": "image-to-ico.zip",
+      "package": "directory"
+    },
+    {
+      "id": "jianying-video",
+      "name": "剪映 video",
+      "description": "处理剪映已渲染的复合片段，作为普通视频打开。",
+      "kind": "Windows 程序",
+      "directory": "tools/jianying-video",
+      "entry": "tools/jianying-video/剪映video.exe",
+      "asset": "jianying-video.exe",
+      "package": "file"
+    },
+    {
+      "id": "filename-cleaner",
+      "name": "文件名清理",
+      "description": "批量清理文件和文件夹名称中的特殊字符。",
+      "kind": "Python 源码 / Windows 成品",
+      "directory": "tools/filename-cleaner",
+      "entry": "tools/filename-cleaner/main.py",
+      "asset": "filename-cleaner-source.zip",
+      "package": "directory"
+    },
+    {
+      "id": "lottery-checker",
+      "name": "双色球 / 大乐透查询",
+      "description": "选择期号、输入号码，查询开奖与中奖情况。",
+      "kind": "Python 图形界面",
+      "directory": "tools/lottery-checker",
+      "entry": "tools/lottery-checker/main.py",
+      "asset": "lottery-checker.zip",
+      "package": "directory"
+    },
+    {
+      "id": "ai-media-workspace",
+      "name": "AI 图像与视频生成",
+      "description": "在网页中调用 Seedance 视频与 Seedream 图片模型。",
+      "kind": "网页工具 · 自备 API Key",
+      "directory": "tools/ai-media-workspace",
+      "entry": "tools/ai-media-workspace/index.html",
+      "asset": "ai-media-workspace.html",
+      "package": "file"
+    },
+    {
+      "id": "images-to-pdf-word",
+      "name": "图片转 PDF＋Word",
+      "description": "把多张图片整理成单个 PDF 和 Word 文档。",
+      "kind": "Windows 程序",
+      "directory": "tools/images-to-pdf-word",
+      "asset": "img2.PDF+WORD.exe",
+      "package": "existing-release"
+    },
+    {
+      "id": "images-to-pdf",
+      "name": "图片转 PDF",
+      "description": "将多张图片合并为一个 PDF 文件。",
+      "kind": "Windows 程序",
+      "directory": "tools/images-to-pdf",
+      "asset": "img2.PDF.exe",
+      "package": "existing-release"
+    },
+    {
+      "id": "lock-screen",
+      "name": "简单锁屏",
+      "description": "一个独立的 Windows 锁屏小工具。",
+      "kind": "Windows 程序",
+      "directory": "tools/lock-screen",
+      "asset": "Lock.screen.zip",
+      "package": "existing-release"
+    }
+  ],
+  "existing_release_assets": [
+    {
+      "name": "img2.PDF+WORD.exe",
+      "url": "https://github.com/Yaro-lu/lol/releases/download/%E5%B0%8F%E5%8A%9F%E8%83%BD/img2.PDF%2BWORD.exe",
+      "sha256": "54aece5829b7bdbd2e181e62ff88d5c7dc6cea72aa3f0a6f24ca53661941b551",
+      "tool": "images-to-pdf-word"
+    },
+    {
+      "name": "img2.PDF.exe",
+      "url": "https://github.com/Yaro-lu/lol/releases/download/%E5%B0%8F%E5%8A%9F%E8%83%BD/img2.PDF.exe",
+      "sha256": "35f5a77b96f71deef37b158f81c316792c667af9895d17900b43e25254069b6c",
+      "tool": "images-to-pdf"
+    },
+    {
+      "name": "Lock.screen.zip",
+      "url": "https://github.com/Yaro-lu/lol/releases/download/%E5%B0%8F%E5%8A%9F%E8%83%BD/Lock.screen.zip",
+      "sha256": "4d927d0b97a5c106634b6a5d27490e76b7958b401fe0461bddb44a43b97c1a1f",
+      "tool": "lock-screen"
+    },
+    {
+      "name": "Remove.special.file.name.zip",
+      "url": "https://github.com/Yaro-lu/lol/releases/download/%E5%B0%8F%E5%8A%9F%E8%83%BD/Remove.special.file.name.zip",
+      "sha256": "0c1b047bc34a53b17fce37aba05b53d88188394740262efe40540f76baf18247",
+      "tool": "filename-cleaner"
+    }
+  ]
+}
